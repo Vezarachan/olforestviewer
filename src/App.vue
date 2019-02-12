@@ -15,8 +15,9 @@
       <HelloWorld/>
     </v-content>
   </v-app>-->
-  <div>
-    <ol-map></ol-map>
+  <div id="app">
+    <router-link to="/home"></router-link>
+    <router-view></router-view>
   </div>
 </template>
 
@@ -36,3 +37,12 @@ export default {
   }
 };
 </script>
+
+<style>
+#app {
+  height: 100%;
+  padding: 0;
+  margin: 0;
+}
+</style>
+

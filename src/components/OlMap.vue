@@ -1,29 +1,86 @@
 <template>
   <v-app id="inspire" dark>
-    <!-- TODO 侧滑功能栏 -->
-    <v-navigation-drawer fixed clipped app v-model="drawer">
+    <!-- 侧滑功能栏 -->
+    <v-navigation-drawer
+      fixed
+      :clipped="$vuetify.breakpoint.lgAndUp"
+      elevation-15
+      app
+      floating
+      v-model="drawer"
+      light
+      id="nav-drawer"
+    >
       <div id="infoBox">
-        <v-flex md12>
-          <v-card light>
-            <v-card-title primary-title class="headline teal lighten-4">图层属性</v-card-title>
-            <v-divider></v-divider>
-            <v-list dense>
-              <v-list-tile v-for="(value, key, index) in layerInfo" :key="index" v-if="index >= 2">
-                <v-list-tile-content>{{key}}</v-list-tile-content>
-                <v-list-tile-content class="align-end">{{value}}</v-list-tile-content>
+        <v-flex md12 id="layerinfo-top">
+          <v-list dense v-show="isToolListShow">
+            <template v-for="item in items">
+              <v-list-group
+                v-if="item.children"
+                v-model="item.model"
+                :key="item.text"
+                :prepend-icon="item.model ? item.icon : item['icon-alt']"
+                append-icon
+              >
+                <v-list-tile slot="activator">
+                  <v-list-tile-content>
+                    <v-list-tile-title>{{ item.text }}</v-list-tile-title>
+                  </v-list-tile-content>
+                </v-list-tile>
+                <v-list-tile
+                  v-for="(child, i) in item.children"
+                  :key="i"
+                  @click.stop="clickCallback(child.method)"
+                >
+                  <v-list-tile-action v-if="child.icon">
+                    <v-icon>{{ child.icon }}</v-icon>
+                  </v-list-tile-action>
+                  <v-list-tile-content>
+                    <v-list-tile-title>{{ child.text }}</v-list-tile-title>
+                  </v-list-tile-content>
+                </v-list-tile>
+              </v-list-group>
+              <v-list-group v-else-if="item.boxselection" :key="item.text" @click.stop>
+                <v-list-tile slot="activator">
+                  <v-list-tile-action>
+                    <v-icon>{{ item.icon }}</v-icon>
+                  </v-list-tile-action>
+                  <v-list-tile-content>
+                    <v-list-tile-title>{{ item.text }}</v-list-tile-title>
+                  </v-list-tile-content>
+                </v-list-tile>
+                <v-list-tile>
+                  <v-select
+                    label="选择图层"
+                    :items="item.selects"
+                    return-object
+                    v-model="item.boxLayerSelection"
+                  ></v-select>
+                </v-list-tile>
+              </v-list-group>
+              <v-list-tile v-else :key="item.text" @click.stop>
+                <v-list-tile-action>
+                  <v-icon>{{ item.icon }}</v-icon>
+                </v-list-tile-action>
+                <v-list-tile-content>
+                  <v-list-tile-title>{{ item.text }}</v-list-tile-title>
+                </v-list-tile-content>
               </v-list-tile>
-            </v-list>
-          </v-card>
+            </template>
+          </v-list>
         </v-flex>
+        <!-- 属性列表 start -->
+        <properties-list :items="layerInfo" v-if="selection"></properties-list>
+        <!-- 属性列表 end -->
       </div>
     </v-navigation-drawer>
-    <!-- TODO 顶部工具栏 -->
+    <!-- 工具栏 -->
     <v-toolbar color="teal lighten-2" dense fixed clipped-left app>
       <v-tooltip bottom>
         <v-btn icon slot="activator" @click.stop="drawer = !drawer">
-          <v-icon>fas fa-layer-group</v-icon>
+          <v-icon>fab fa-connectdevelop</v-icon>
         </v-btn>
-        <span>图层属性</span>
+        <span>工具箱</span>
       </v-tooltip>
 
       <v-btn icon>
@@ -33,18 +90,6 @@
         <span class="title">天目山林场森林资源管理系统</span>
       </v-toolbar-title>
       <v-spacer></v-spacer>
-      <v-tooltip bottom>
-        <v-btn icon slot="activator">
-          <v-icon>far fa-square</v-icon>
-        </v-btn>
-        <span>框选</span>
-      </v-tooltip>
-      <v-tooltip bottom>
-        <v-btn icon slot="activator">
-          <v-icon>fas fa-search</v-icon>
-        </v-btn>
-        <span>查询</span>
-      </v-tooltip>
       <v-tooltip bottom>
         <v-btn icon slot="activator">
           <v-icon>fas fa-calendar-check</v-icon>
@@ -57,24 +102,10 @@
         </v-btn>
         <span>用户中心</span>
       </v-tooltip>
-      <v-dialog v-model="about_dialog" width="800">
-        <v-btn slot="activator" icon>
-          <v-icon>fas fa-info-circle</v-icon>
-        </v-btn>
-
-        <v-card light>
-          <v-card-title class="headline teal lighten-4" primary-title>关于</v-card-title>
-          <v-card-text>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</v-card-text>
-          <v-divider></v-divider>
-          <v-card-actions>
-            <v-spacer></v-spacer>
-            <v-btn color="error" flat @click="about_dialog = false">关闭</v-btn>
-          </v-card-actions>
-        </v-card>
-      </v-dialog>
     </v-toolbar>
+    <!-- 地图内容 -->
     <v-content app>
-      <div id="mapContainer" class="mapContainer" ref="mapContainer">
+      <div id="mapContainer" class="mapContainer" ref="mapContainer" :style="{height: mapHeight}">
         <div id="map" class="map">
           <pre id="info"/>
         </div>
@@ -131,25 +162,87 @@ import EventBus from "../plugins/eventBus.js";
 import proj4 from "proj4";
 import { register } from "ol/proj/proj4";
 import { bbox as bboxStrategy } from "ol/loadingstrategy";
+import { fromLonLat } from "ol/proj.js";
 // Web Client
 import axios from "axios";
 // Interaction
 import { DragBox, Select } from "ol/interaction";
 import { platformModifierKeyOnly } from "ol/events/condition";
 
+import PropertiesList from "../components/PropertiesList";
+import QueryingBox from "../components/QueryingBox";
+import FilterUtils from "../utils/FilterUtils.js";
+
 export default {
+  components: {
+    PropertiesList,
+    QueryingBox
+  },
   data() {
     return {
       map: null,
-      about_dialog: false,
-      layerInfo: {
-        data: "无数据"
-      },
+      view: null,
+      layerInfo: new Array(),
       drawer: null,
+      mapHeight: document.body.clientHeight - 84,
+      quickPanTo: false,
+      selection: false,
+      boxSelection: false,
+      boxSelectionItems: FilterUtils.layerProperties,
+      isToolListShow: true,
+      // boxLayerSelection: null,
+      querySelection: null,
+      quickQueryDialog: false,
       items: [
-        { text: "古树名木图层" },
-        { text: "林场公益林图层" },
-        { text: "林场小班图层" }
+        {
+          icon: "fas fa-thumbtack",
+          "icon-alt": "fas fa-crosshairs",
+          text: "快速到达工具",
+          children: [
+            { text: "东天目林区", method: "panToDongTianmu" },
+            { text: "千秋林区", method: "panToQianqiu" },
+            { text: "一都林区", method: "panToYidu" }
+          ]
+        },
+        {
+          icon: "fas fa-vector-square",
+          text: "框选要素工具",
+          boxselection: true,
+          selects: [
+            { text: "林场小班图层", index: 1 },
+            { text: "林场公益林图层", index: 2 },
+            { text: "林场古树名木图层", index: 3 }
+          ],
+          boxLayerSelection: null
+        },
+        {
+          icon: "fas fa-search-location",
+          "icon-alt": "fas fa-search",
+          text: "查询要素工具",
+          children: [{ text: "快速查询", method: "openQuickQuery" }]
+        },
+        {
+          icon: "fas fa-chart-pie",
+          "icon-alt": "fas fa-chart-bar",
+          text: "统计分析工具",
+          children: [{ icon: "add", text: "Create label" }]
+        },
+        {
+          icon: "fas fa-edit",
+          "icon-alt": "fas fa-pencil-alt",
+          text: "要素编辑工具",
+          children: [
+            { text: "Import" },
+            { text: "Export" },
+            { text: "Print" },
+            { text: "Undo changes" },
+            { text: "Other contacts" }
+          ]
+        },
+        {
+          icon: "fas fa-vr-cardboard",
+          text: "3D展示工具"
+        }
       ]
     };
   },
@@ -184,7 +277,7 @@ export default {
     //#endregion
 
     //#region  数据图层
-    // 矢量图层样式
+    /* 矢量图层样式 start */
     var forestCourseStyle = new Style({
       fill: new Fill({
         color: "#e0f7fa"
@@ -230,7 +323,10 @@ export default {
         src: "http://localhost:8090/Images/old-valtrees.png"
       })
     });
+    /* 矢量图层样式 end */
+
     //WFS服务图层（GeoJSON）
+    /* 矢量图数据源 start */
     var TMSCourseSource = new VectorSource({
       format: new GeoJSON(),
       url: extent => {
@@ -252,13 +348,6 @@ export default {
       strategy: bboxStrategy
     });
 
-    var TMSCourse_layer = new VectorLayer({
-      title: "林场小班图层",
-      opacity: 0.75,
-      zIndex: 10,
-      source: TMSCourseSource,
-      style: forestCourseStyle
-    });
     var TMSWelfareCourseSource = new VectorSource({
       format: new GeoJSON(),
       url: extent => {
@@ -278,14 +367,6 @@ export default {
         );
       },
       strategy: bboxStrategy
-    });
-
-    var TMSWelfareCourse_layer = new VectorLayer({
-      title: "林场公益林图层",
-      opacity: 0.75,
-      zIndex: 20,
-      source: TMSWelfareCourseSource,
-      style: welfareForestCourseStyle
     });
 
     var valuableTreesSource = new VectorSource({
@@ -308,11 +389,39 @@ export default {
       },
       strategy: bboxStrategy
     });
+
+    var spatial_analysis_source = new VectorSource();
+    /* 矢量图数据源 end */
+
+    /* 矢量图层 start */
+    var TMSCourse_layer = new VectorLayer({
+      title: "林场小班图层",
+      opacity: 0.75,
+      zIndex: 10,
+      source: TMSCourseSource,
+      style: forestCourseStyle
+    });
+
+    var TMSWelfareCourse_layer = new VectorLayer({
+      title: "林场公益林图层",
+      opacity: 0.6,
+      zIndex: 20,
+      source: TMSWelfareCourseSource,
+      style: welfareForestCourseStyle
+    });
+
     var valuableTrees_layer = new VectorLayer({
       title: "林场古树名木图层",
       zIndex: 100,
       source: valuableTreesSource,
       style: iconStyle
+    });
+
+    var spatial_analysis_layer = new VectorLayer({
+      title: "空间分析图层",
+      zIndex: 1000,
+      style: welfareForestCourseStyle,
+      source: spatial_analysis_source
     });
 
     // 森林事件图层
@@ -325,8 +434,10 @@ export default {
       title: "森林火灾图层",
       zIndex: 300
     });
+    /* 矢量图层 end */
 
     // WMS服务图层（不能修改）
+    /* 图像图层 start */
     var tianmushan_courselayer = new TileLayer({
       title: "林场小班图层",
       zIndex: 10,
@@ -487,121 +598,192 @@ export default {
         })
       ]
     });
+    /* 图像图层 end */
     //#endregion
 
     //#region 地图基本外观定义
-    this.map = new Map({
-      target: "map",
-      logo: {
-        src: "localhost:8090/Images/oldvaltrees.png",
-        href: "http://www.openstreetmap.org/"
-      },
-      layers: [
-        new LayerGroup({
-          title: "林场事件图层",
-          fold: "open",
-          layers: [forestFire_layer, forestRanger_layer]
-        }),
-        new LayerGroup({
-          title: "林场信息图层",
-          fold: "open",
-          layers: [
-            TMSCourse_layer,
-            TMSWelfareCourse_layer,
-            tianmushan_waterfacelayer,
-            tianmushan_buildingslayer,
-            valuableTrees_layer
-          ]
-        }),
-        base_layers
-      ],
-      view: new View({
-        projection: "EPSG:3857",
-        center: [13304261, 3548705],
-        zoom: 15,
-        minZoom: 2,
-        maxZoom: 18
-      }),
-      controls: defaultControls({
-        attribution: false,
-        rotate: false
-      }).extend([
-        new Zoom({
-          zoomOutTipLabel: "缩小",
-          zoomInTipLabel: "放大"
-        }),
-        new OverviewMap({
-          tipLabel: "缩略图",
-          layers: [base_layers]
-        }),
-        new ScaleLine(),
-        new ZoomSlider(),
-        new ZoomToExtent({
-          tipLabel: "重置范围",
-          extent: [
-            13276175.459538622,
-            3539493.031773371,
-            13308393.666960824,
-            3558869.8184436634
-          ]
-        }),
-        new FullScreen()
-      ])
-    });
+    (this.view = new View({
+      projection: "EPSG:3857",
+      center: [13304261, 3548705],
+      zoom: 15,
+      minZoom: 2,
+      maxZoom: 18
+    })),
+      (this.map = new Map({
+        target: "map",
+        logo: {
+          src: "localhost:8090/Images/oldvaltrees.png",
+          href: "http://www.openstreetmap.org/"
+        },
+        layers: [
+          new LayerGroup({
+            title: "林场事件图层",
+            fold: "open",
+            layers: [forestFire_layer, forestRanger_layer]
+          }),
+          new LayerGroup({
+            title: "林场信息图层",
+            fold: "open",
+            layers: [
+              TMSCourse_layer,
+              TMSWelfareCourse_layer,
+              tianmushan_waterfacelayer,
+              tianmushan_buildingslayer,
+              valuableTrees_layer
+            ]
+          }),
+          base_layers
+        ],
+        view: this.view,
+        controls: defaultControls({
+          attribution: false,
+          rotate: false
+        }).extend([
+          new Zoom({
+            // 放大缩小比例
+            zoomOutTipLabel: "缩小",
+            zoomInTipLabel: "放大"
+          }),
+          new OverviewMap({
+            //缩略图
+            tipLabel: "缩略图",
+            layers: [base_layers]
+          }),
+          new ScaleLine(), // 比例尺
+          new ZoomSlider(), // 比例大小调整
+          new ZoomToExtent({
+            // 重置范围
+            tipLabel: "重置范围",
+            extent: [
+              13276175.459538622,
+              3539493.031773371,
+              13308393.666960824,
+              3558869.8184436634
+            ]
+          }),
+          new FullScreen() // 全屏视图
+        ])
+      }));
+    /* 图层管理 start */
     var layerSwitcher = new LayerSwitcher({
       tipLabel: "图层切换"
     });
     this.map.addControl(layerSwitcher);
+    /* 图层管理 end */
     //#endregion
 
-    // 单击选择
+    //#region 地图交互
+    /* 单击选择 start */
     var select = new Select();
     this.map.addInteraction(select);
     var info = document.getElementById("info");
     this.map.on("singleclick", evt => {
       var features = this.map.getFeaturesAtPixel(evt.pixel);
       if (!features) {
+        this.selection = false;
+        this.isToolListShow = true;
         return;
       }
-      this.layerInfo = features[0].getProperties();
-      // EventBus.$emit("LayerInfo", features[0].getProperties());
+      this.selection = true;
+      this.isToolListShow = !this.isToolListShow;
+      this.layerInfo = Array(features[0].getProperties());
       console.log(this.layerInfo);
     });
+    /* 单击选择 end */
 
+    /* 框选 start */
     var selectedFeatures = select.getFeatures();
+    var boxFeatures = new Array();
+    var boxSelectionSource = null;
     var dragBoxSelect = new DragBox({
       condition: platformModifierKeyOnly
     });
     this.map.addInteraction(dragBoxSelect);
     dragBoxSelect.on("boxend", () => {
       var extent = dragBoxSelect.getGeometry().getExtent();
-      TMSWelfareCourseSource.forEachFeatureIntersectingExtent(extent, function(
+      switch (this.items[1].boxLayerSelection.index) {
+        case 1:
+          boxSelectionSource = TMSCourseSource;
+          break;
+        case 2:
+          boxSelectionSource = TMSWelfareCourseSource;
+          break;
+        case 3:
+          boxSelectionSource = valuableTreesSource;
+        default:
+          break;
+      }
+      if (!boxSelectionSource) {
+        return;
+      }
+      this.boxSelection = !this.boxSelection;
+      console.log(this.items[1].boxLayerSelection.index);
+      boxSelectionSource.forEachFeatureIntersectingExtent(extent, function(
         feature
       ) {
+        console.log(feature.getProperties());
+
+        boxFeatures.push(feature.getProperties());
         selectedFeatures.push(feature);
       });
+      if (!selectedFeatures) {
+        this.selection = false;
+        return;
+      }
+      this.selection = true;
+      console.log(this.map.getLayers().getArray());
+      console.log(this.drawer);
+      this.layerInfo = boxFeatures;
     });
 
     dragBoxSelect.on("boxstart", function() {
+      boxFeatures = new Array();
       selectedFeatures.clear();
     });
+    /* 框选 end */
 
     // Popup
     var popup = new Popup();
     this.map.addOverlay(popup);
+    //#endregion
   },
   computed: {},
-  methods: {},
+  created() {
+    this.getHeight();
+  },
+  methods: {
+    getHeight() {
+      this.mapHeight = window.innerHeight - 84 + "px";
+    },
+    panToQianqiu() {
+      this.view.animate({
+        center: [13281279, 3549469],
+        duration: 2000
+      });
+    },
+    panToDongTianmu() {
+      this.view.animate({
+        center: [13304361, 3548676],
+        duration: 2000
+      });
+    },
+    panToYidu() {
+      this.view.animate({
+        center: [13303043, 3555264],
+        duration: 2000
+      });
+    },
+    clickCallback(methodWords) {
+      console.log("methodWords", methodWords);
+      this[methodWords]();
+    }
+  },
   watch: {}
 };
 </script>
 
 <style>
 @import url("//at.alicdn.com/t/font_752750_gnlztkyps9.css");
-#infoBox {
-  width: 100%;
-}
-
 #mapContainer {
   width: 100%;
   background: white;
@@ -700,8 +882,9 @@ export default {
 #map .layer-switcher button {
   width: 38px;
   height: 38px;
-  background-image: url("http://47.106.130.112:8080/Images/layers.png")
-    /*logo.png*/;
+  /* background-image: url("http://47.106.130.112:8080/Images/layers.png"); */
+  /*logo.png*/
+  background-image: url("http://localhost:8090/Images/layers.png");
   background-size: cover;
   background-repeat: no-repeat;
   background-color: rgba(224, 224, 224, 0.8);
@@ -732,5 +915,9 @@ export default {
   color: white;
   border: 0;
   transition: opacity 100ms ease-in;
+}
+
+#nav-drawer {
+  z-index: 99999;
 }
 </style>

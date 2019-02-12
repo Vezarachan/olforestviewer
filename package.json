@@ -9,9 +9,11 @@
     "test:unit": "vue-cli-service test:unit"
   },
   "dependencies": {
+    "@turf/turf": "^5.1.6",
     "axios": "^0.18.0",
     "echarts": "^4.2.0-rc.2",
     "echarts-gl": "^1.1.1",
+    "jsts": "^2.0.3",
     "ol": "^5.3.0",
     "ol-ext": "^3.0.3",
     "ol-layerswitcher": "^3.2.0",
