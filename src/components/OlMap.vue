@@ -58,6 +58,15 @@
                   ></v-select>
                 </v-list-tile>
               </v-list-group>
+              <v-list-tile v-else-if="item.dialogMode" :key="item.text" @click.stop="clickCallBack(dialogMethod)">
+                <v-list-tile-action>
+                  <v-icon>{{ item.icon }}</v-icon>
+                </v-list-tile-action>
+                <v-list-tile-content>
+                  <v-list-tile-title>{{ item.text }}</v-list-tile-title>
+                </v-list-tile-content>
+              </v-list-tile>
+              
               <v-list-tile v-else :key="item.text" @click.stop>
                 <v-list-tile-action>
                   <v-icon>{{ item.icon }}</v-icon>
@@ -192,7 +201,6 @@ export default {
       isToolListShow: true,
       // boxLayerSelection: null,
       querySelection: null,
-      quickQueryDialog: false,
       items: [
         {
           icon: "fas fa-thumbtack",
@@ -219,7 +227,7 @@ export default {
           icon: "fas fa-search-location",
           "icon-alt": "fas fa-search",
           text: "查询要素工具",
-          children: [{ text: "快速查询", method: "openQuickQuery" }]
+          dialogMode: true,
         },
         {
           icon: "fas fa-chart-pie",
