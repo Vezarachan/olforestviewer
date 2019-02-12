@@ -223,6 +223,7 @@ export default {
           ],
           boxLayerSelection: null
         },
+        // TODO 查询功能未完成
         {
           icon: "fas fa-search-location",
           "icon-alt": "fas fa-search",
